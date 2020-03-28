@@ -3,7 +3,9 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong/latlong.dart';
 
-String apiKey = "AIzaSyBAez6bpIuIpzcJvB5DhocWtrlB1UFzkQw";
+import 'pages/map.dart';
+import 'pages/products.dart';
+import 'pages/supermarkets.dart';
 
 void main() => runApp(Wimp());
 
@@ -23,6 +25,8 @@ class Homepage extends StatefulWidget {
 }
 
 class HomepageState extends State<Homepage> {
+  int _selectedIndex = 0;
+  MapController mapController;
   LatLng _currentLocationInLatLng = new LatLng(45.0, 8.0);
   Marker _positionMarker = new Marker(
       width: 20.0,
@@ -34,6 +38,22 @@ class HomepageState extends State<Homepage> {
   var geolocator = Geolocator();
   var locationOptions =
       LocationOptions(accuracy: LocationAccuracy.high, distanceFilter: 10);
+  bool firstPositionAcquisition = true;
+
+  List<BottomNavigationBarItem> _bottomBarOptions = <BottomNavigationBarItem>[
+    BottomNavigationBarItem(icon: Icon(Icons.place), title: Text('Map')),
+    BottomNavigationBarItem(
+        icon: Icon(Icons.shopping_cart), title: Text('Supermarkets')),
+    BottomNavigationBarItem(icon: Icon(Icons.toc), title: Text('Products')),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    mapController = MapController();
+    geolocator.getPositionStream(locationOptions).listen(
+        (Position position) => setState(() => onPositionUpdate(position)));
+  }
 
   void onPositionUpdate(Position position) {
     if (position != null) {
@@ -46,46 +66,50 @@ class HomepageState extends State<Homepage> {
           builder: (ctx) => new Container(
                 child: new FlutterLogo(),
               ));
+      if (firstPositionAcquisition) {
+        mapController.move(_currentLocationInLatLng, 18.0);
+        firstPositionAcquisition = false;
+      }
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    geolocator.getPositionStream(locationOptions).listen(
-        (Position position) => setState(() => onPositionUpdate(position)));
+  void _onBottomItemTapped(int value) {
+    setState(() {
+      _selectedIndex = value;
+    });
+  }
+
+  Widget mainWidget(int index) {
+    switch(index){
+      case 0:
+        return getMapPage(mapController, _currentLocationInLatLng, _positionMarker);
+      case 1:
+        return getSupermarketsPage();
+      case 2:
+        return getProductsPage();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        home: Scaffold(
-      appBar: AppBar(
-        title: Text('Wimp'),
-        backgroundColor: Colors.red[700],
-        centerTitle: true,
-      ),
-      body: new FlutterMap(
-        options: new MapOptions(
-          center: _currentLocationInLatLng,
-          zoom: 10.0,
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('Wimp'),
+          backgroundColor: Colors.red[700],
+          centerTitle: true,
         ),
-        layers: [
-          TileLayerOptions(
-            urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            subdomains: ['a', 'b', 'c'],
-            // For example purposes. It is recommended to use
-            // TileProvider with a caching and retry strategy, like
-            // NetworkTileProvider or CachedNetworkTileProvider
-            tileProvider: CachedNetworkTileProvider(),
-          ),
-          MarkerLayerOptions(
-            markers: [
-              _positionMarker,
-            ],
-          ),
-        ],
+        body: mainWidget(_selectedIndex),
+        bottomNavigationBar: BottomNavigationBar(
+          showUnselectedLabels: true,
+          items: _bottomBarOptions,
+          backgroundColor: Colors.red,
+          selectedItemColor: Colors.amber,
+          unselectedItemColor: Colors.white,
+          onTap: _onBottomItemTapped,
+          currentIndex: _selectedIndex,
+        ),
       ),
-    ));
+    );
   }
 }
