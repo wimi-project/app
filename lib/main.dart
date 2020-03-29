@@ -115,7 +115,7 @@ class HomepageState extends State<Homepage> {
     });
   }
 
-  Widget mainWidget(int index) {
+  Widget getMainWidget(int index) {
     switch (index) {
       case 0:
         return getMapPage();
@@ -157,8 +157,8 @@ class HomepageState extends State<Homepage> {
           color: Colors.white,
         ),
         onPressed: () {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (context) => FeedbackState()));
+          Navigator.push(
+              context, MaterialPageRoute(builder: (context) => FeedbackPage()));
         },
         backgroundColor: Colors.red,
       ),
@@ -375,7 +375,8 @@ class HomepageState extends State<Homepage> {
                   child: Text(supermarketSelected.address),
                 ),
                 Text(
-                  "QUEUE TIME: " + getFeedback(supermarketSelected.queueTime.toString()),
+                  "QUEUE TIME: " +
+                      getFeedback(supermarketSelected.queueTime.toString()),
                   style: descriptionStyle.copyWith(
                       color: Colors.black54, fontStyle: FontStyle.italic),
                 ),
@@ -501,7 +502,7 @@ class HomepageState extends State<Homepage> {
           backgroundColor: Colors.red[700],
           centerTitle: true,
         ),
-        body: mainWidget(_selectedPage),
+        body: getMainWidget(_selectedPage),
         bottomNavigationBar: BottomNavigationBar(
           showUnselectedLabels: true,
           items: _bottomBarOptions,
@@ -516,14 +517,128 @@ class HomepageState extends State<Homepage> {
   }
 }
 
-class FeedbackState extends StatelessWidget {
+class FeedbackPage extends StatefulWidget {
+  @override
+  State<FeedbackPage> createState() => FeedbackState();
+}
+
+class FeedbackState extends State<FeedbackPage> {
+  int _currentPage = 0;
   final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
   final productsFetch = ProductApi.getClosestProducts();
   final supermarketsFetch = SupermarketApi.getClosestSupermarkets();
   List<ProductModel> _products;
   List<SupermarketModel> _supermarkets;
 
-  Widget getFeedbackPage(GlobalKey<FormBuilderState> fbKey) {
+  Future<bool> _futurePostResult;
+  bool _postResult;
+
+  Widget getMainWidget(int index) {
+    switch (index) {
+      case 0:
+        return getFeedbackPage();
+      case 1:
+        return getFeedbackGivenPage();
+    }
+  }
+
+  Widget getFeedbackPage() {
+    List<DropdownMenuItem> productItems = _products
+        .map((product) => DropdownMenuItem(
+              value: product.id,
+              child: Text(product.name),
+            ))
+        .toList();
+
+    List<DropdownMenuItem> supermarketItems = _supermarkets
+        .map((supermarket) => DropdownMenuItem(
+              value: supermarket.id,
+              child: Text(supermarket.name),
+            ))
+        .toList();
+
+    return Column(children: <Widget>[
+      FormBuilder(
+        key: _fbKey,
+        child: Column(
+          children: <Widget>[
+            FormBuilderDropdown(
+                attribute: "supermarket",
+                decoration: InputDecoration(labelText: "Supermarket"),
+                items: supermarketItems),
+            FormBuilderDropdown(
+                attribute: "product",
+                decoration: InputDecoration(labelText: "Product"),
+                items: productItems),
+            FormBuilderDropdown(
+                attribute: "feedback",
+                decoration: InputDecoration(labelText: "Availability"),
+                items: ['No availability', 'Low availability']
+                    .map((availability) => DropdownMenuItem(
+                          value: availability,
+                          child: Text("$availability"),
+                        ))
+                    .toList()),
+          ],
+        ),
+      ),
+      Center(
+        child: new RaisedButton(
+          onPressed: () {
+            if (_fbKey.currentState.saveAndValidate()) {
+              print(_fbKey.currentState.value);
+              onSubmit(FeedbackApi.postFeedback(_fbKey.currentState.value));
+            }
+          },
+          textColor: Colors.white,
+          color: Colors.red,
+          padding: const EdgeInsets.all(8.0),
+          child: new Text(
+            "Submit",
+          ),
+        ),
+      )
+    ]);
+  }
+
+  Widget getLoadingPage() {
+    return Scaffold(
+        appBar: AppBar(
+          title: Text('Wimp'),
+          backgroundColor: Colors.red[700],
+          centerTitle: true,
+        ),
+        body: Stack(children: [Center(child: CircularProgressIndicator())]));
+  }
+
+  Widget getFeedbackGivenPage() {
+    return MaterialApp(
+      home: FutureBuilder<bool>(
+          future: _futurePostResult,
+          builder: (context, snapshot) {
+            if (snapshot.hasData && snapshot.data) {
+              _postResult = snapshot.data;
+              return SafeArea(
+                child: Scaffold(
+                  body: Center(
+                    child: Text(
+                      'Thank you for the feedback! ^^',
+                      style: TextStyle(fontSize: 18.0, color: Colors.red),
+                    ),
+                  ),
+                ),
+              );
+            } else if (snapshot.hasError) {
+              return Scaffold(body: Text("Error posting the feedback"));
+            }
+            return Stack(
+                children: [Center(child: CircularProgressIndicator())]);
+          }),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return FutureBuilder(
       future: Future.wait([supermarketsFetch, productsFetch]).then((response) =>
           new SupermarketsAndProducts(
@@ -532,19 +647,6 @@ class FeedbackState extends StatelessWidget {
         if (snapshot.hasData) {
           _products = snapshot.data.products;
           _supermarkets = snapshot.data.supermarkets;
-          List<DropdownMenuItem> productItems = _products
-              .map((product) => DropdownMenuItem(
-                    value: product.id,
-                    child: Text(product.name),
-                  ))
-              .toList();
-
-          List<DropdownMenuItem> supermarketItems = _supermarkets
-              .map((supermarket) => DropdownMenuItem(
-                    value: supermarket.id,
-                    child: Text(supermarket.name),
-                  ))
-              .toList();
 
           return Scaffold(
               appBar: AppBar(
@@ -552,49 +654,7 @@ class FeedbackState extends StatelessWidget {
                 backgroundColor: Colors.red[700],
                 centerTitle: true,
               ),
-              body: Column(children: <Widget>[
-                FormBuilder(
-                  key: fbKey,
-                  child: Column(
-                    children: <Widget>[
-                      FormBuilderDropdown(
-                          attribute: "supermarket",
-                          decoration: InputDecoration(labelText: "Supermarket"),
-                          items: supermarketItems),
-                      FormBuilderDropdown(
-                          attribute: "product",
-                          decoration: InputDecoration(labelText: "Product"),
-                          items: productItems),
-                      FormBuilderDropdown(
-                          attribute: "feedback",
-                          decoration:
-                              InputDecoration(labelText: "Availability"),
-                          items: ['No availability', 'Low availability']
-                              .map((availability) => DropdownMenuItem(
-                                    value: availability,
-                                    child: Text("$availability"),
-                                  ))
-                              .toList()),
-                    ],
-                  ),
-                ),
-                Center(
-                  child: new RaisedButton(
-                    onPressed: () {
-                      if (fbKey.currentState.saveAndValidate()) {
-                        FeedbackApi.postFeedback(fbKey.currentState.value);
-                        print(fbKey.currentState.value);
-                      }
-                    },
-                    textColor: Colors.white,
-                    color: Colors.red,
-                    padding: const EdgeInsets.all(8.0),
-                    child: new Text(
-                      "Submit",
-                    ),
-                  ),
-                )
-              ]));
+              body: getMainWidget(_currentPage));
         } else if (snapshot.hasError) {
           return Scaffold(
               appBar: AppBar(
@@ -604,7 +664,7 @@ class FeedbackState extends StatelessWidget {
               ),
               body: Column(children: <Widget>[
                 FormBuilder(
-                  key: fbKey,
+                  key: _fbKey,
                   child: Column(
                     children: <Widget>[
                       FormBuilderTextField(
@@ -635,9 +695,9 @@ class FeedbackState extends StatelessWidget {
                 Center(
                   child: new RaisedButton(
                     onPressed: () {
-                      if (fbKey.currentState.saveAndValidate()) {
+                      if (_fbKey.currentState.saveAndValidate()) {
                         //TODO Send feedback to backend
-                        print(fbKey.currentState.value);
+                        print(_fbKey.currentState.value);
                       }
                     },
                     textColor: Colors.white,
@@ -650,20 +710,16 @@ class FeedbackState extends StatelessWidget {
                 )
               ]));
         }
-        return Scaffold(
-            appBar: AppBar(
-              title: Text('Wimp'),
-              backgroundColor: Colors.red[700],
-              centerTitle: true,
-            ),
-            body:
-                Stack(children: [Center(child: CircularProgressIndicator())]));
+
+        return getLoadingPage();
       },
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return getFeedbackPage(_fbKey);
+  void onSubmit(Future<bool> postFeedback) {
+    setState(() {
+      _futurePostResult = postFeedback;
+      _currentPage = 1;
+    });
   }
 }

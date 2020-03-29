@@ -25,7 +25,7 @@ class FeedbackApi {
     });
 
     if (supermarketId == null || productId == null || feedback == null) {
-      return;
+      return false;
     }
 
     FeedbackModel feedbackModel = createFeedback(feedback);
