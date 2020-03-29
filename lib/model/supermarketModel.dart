@@ -4,8 +4,8 @@ class SupermarketModel {
   int id;
   String name;
   String address;
-  Float latitude;
-  Float longitude;
+  double latitude;
+  double longitude;
   int queueTime;
 
   SupermarketModel({

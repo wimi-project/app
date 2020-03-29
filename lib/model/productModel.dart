@@ -22,7 +22,7 @@ class ProductModel {
         description: json['product_description'],
         imgUrl: json['product_image_url'],
         supermarketId: json['supermarket_id'],
-        feedback: json['feedback']
+        feedback: json['availability']
     );
   }
 }
