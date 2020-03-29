@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:wimp/model/feedbackModel.dart';
 
 class FeedbackApi {
-  static Future<void> postFeedback(Map<String, dynamic> map) async {
+  static Future<bool> postFeedback(Map<String, dynamic> map) async {
     int supermarketId;
     int productId;
     String feedback;
@@ -45,10 +45,10 @@ class FeedbackApi {
         body: body);
     if (response.statusCode == 200) {
       // If the call to the server was successful, parse the JSON.
-      return;
+      return true;
     } else {
       // If that call was not successful, throw an error.
-      throw Exception('Failed to post feedback');
+      return false;
     }
   }
 

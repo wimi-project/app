@@ -9,7 +9,7 @@ import 'package:wimp/rest/supermarketsApi.dart';
 
 import 'model/productModel.dart';
 import 'model/supermarketModel.dart';
-import 'pages/feedback.dart';
+import 'model/supermarketsAndProductsModel.dart';
 import 'rest/productsApi.dart';
 
 void main() => runApp(Wimp());
@@ -31,6 +31,7 @@ class Homepage extends StatefulWidget {
 
 class HomepageState extends State<Homepage> {
   int _selectedIndex = 0;
+  int _selectedPage = 0;
   MapController mapController;
   LatLng _currentLocationInLatLng = new LatLng(45.0, 8.0);
   Marker _positionMarker = new Marker(
@@ -49,11 +50,15 @@ class HomepageState extends State<Homepage> {
   List<ProductModel> _productsShown;
   Future<List<ProductModel>> productsFetch;
   final productFilterController = TextEditingController();
+  ProductModel productSelected;
+  Future<List<SupermarketModel>> supermarketsAvailabilityFetch;
+  List<SupermarketModel> supermarketsWithAvailabilityForProduct;
 
   List<SupermarketModel> _allSupermarkets;
   List<SupermarketModel> _supermarketsShown;
   Future<List<SupermarketModel>> supermarketsFetch;
   final supermarketFilterController = TextEditingController();
+  SupermarketModel supermarketSelected;
 
   List<BottomNavigationBarItem> _bottomBarOptions = <BottomNavigationBarItem>[
     BottomNavigationBarItem(icon: Icon(Icons.place), title: Text('Map')),
@@ -106,6 +111,7 @@ class HomepageState extends State<Homepage> {
   void _onBottomItemTapped(int value) {
     setState(() {
       _selectedIndex = value;
+      _selectedPage = value;
     });
   }
 
@@ -117,6 +123,10 @@ class HomepageState extends State<Homepage> {
         return getSupermarketsPage();
       case 2:
         return getProductsPage();
+      case 3:
+        return getSupermarketDetailPage();
+      case 4:
+        return getProductDetailPage();
     }
   }
 
@@ -132,9 +142,6 @@ class HomepageState extends State<Homepage> {
           TileLayerOptions(
             urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             subdomains: ['a', 'b', 'c'],
-            // For example purposes. It is recommended to use
-            // TileProvider with a caching and retry strategy, like
-            // NetworkTileProvider or CachedNetworkTileProvider
             tileProvider: CachedNetworkTileProvider(),
           ),
           MarkerLayerOptions(
@@ -184,7 +191,9 @@ class HomepageState extends State<Homepage> {
                           getFeedback(_productsShown.elementAt(index).feedback),
                           style: TextStyle(fontStyle: FontStyle.italic)),
                       trailing: Icon(Icons.keyboard_arrow_right,
-                          color: Colors.white, size: 30.0));
+                          color: Colors.white, size: 30.0),
+                      onTap: () =>
+                          onProductTapped(_productsShown.elementAt(index)));
                 },
                 controller: productFilterController,
               );
@@ -217,6 +226,16 @@ class HomepageState extends State<Homepage> {
     }
   }
 
+  void onProductTapped(ProductModel productModel) {
+    setState(() {
+      productSelected = productModel;
+      _selectedPage = 4;
+      supermarketsAvailabilityFetch =
+          SupermarketApi.getClosestSupermarketGivenProduct(
+              productSelected, _currentLocationInLatLng);
+    });
+  }
+
   Widget getImageWidget(imgUrl) {
     if (imgUrl == null) {
       return Icon(Icons.shopping_cart, color: Colors.red, size: 30.0);
@@ -228,7 +247,7 @@ class HomepageState extends State<Homepage> {
   }
 
   String getFeedback(feedback) {
-    if (feedback == null) {
+    if (feedback == null || feedback == "null") {
       return "Unknown";
     }
     return feedback;
@@ -257,7 +276,9 @@ class HomepageState extends State<Homepage> {
                             color: Colors.amber, fontWeight: FontWeight.bold),
                       ),
                       trailing: Icon(Icons.keyboard_arrow_right,
-                          color: Colors.white, size: 30.0));
+                          color: Colors.white, size: 30.0),
+                      onTap: () => onSupermarketTapped(
+                          _supermarketsShown.elementAt(index)));
                 },
                 controller: supermarketFilterController,
               );
@@ -290,6 +311,187 @@ class HomepageState extends State<Homepage> {
     }
   }
 
+  void onSupermarketTapped(SupermarketModel supermarketModel) {
+    setState(() {
+      supermarketSelected = supermarketModel;
+      _selectedPage = 3;
+    });
+  }
+
+  Widget getSupermarketDetailPage() {
+    final ThemeData theme = Theme.of(context);
+    final TextStyle titleStyle = theme.textTheme.headline
+        .copyWith(color: Colors.black87, fontWeight: FontWeight.bold);
+    final TextStyle descriptionStyle = theme.textTheme.subtitle;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          height: 184,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                // In order to have the ink splash appear above the image, you
+                // must use Ink.image. This allows the image to be painted as
+                // part of the Material and display ink effects above it. Using
+                // a standard Image will obscure the ink splash.
+                child: Ink.image(
+                  image: AssetImage('lib/assets/coop.png'),
+                  fit: BoxFit.cover,
+                  child: Container(),
+                ),
+              ),
+              Positioned(
+                bottom: 16,
+                left: 16,
+                right: 16,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    supermarketSelected.name,
+                    style: titleStyle,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Description and share/explore buttons.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: DefaultTextStyle(
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
+            style: descriptionStyle,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // This array contains the three line description on each card
+                // demo.
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(supermarketSelected.address),
+                ),
+                Text(
+                  "QUEUE TIME: " + getFeedback(supermarketSelected.queueTime.toString()),
+                  style: descriptionStyle.copyWith(
+                      color: Colors.black54, fontStyle: FontStyle.italic),
+                ),
+                /*ListView.builder(
+                  itemCount: ,
+                  itemBuilder: (context, index) {
+                    return ListTile(
+                      title: Text(supermarketSelected),
+                    );
+                  },
+                )*/
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget getProductDetailPage() {
+    final ThemeData theme = Theme.of(context);
+    final TextStyle titleStyle = theme.textTheme.headline
+        .copyWith(color: Colors.black87, fontWeight: FontWeight.bold);
+    final TextStyle descriptionStyle = theme.textTheme.subtitle;
+
+    return FutureBuilder<List<SupermarketModel>>(
+        future: supermarketsAvailabilityFetch,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            supermarketsWithAvailabilityForProduct = snapshot.data;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: 184,
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        // In order to have the ink splash appear above the image, you
+                        // must use Ink.image. This allows the image to be painted as
+                        // part of the Material and display ink effects above it. Using
+                        // a standard Image will obscure the ink splash.
+                        child: Ink.image(
+                          image: AssetImage('lib/assets/coop.png'),
+                          fit: BoxFit.cover,
+                          child: Container(),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 16,
+                        left: 16,
+                        right: 16,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            productSelected.name,
+                            style: titleStyle,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Description and share/explore buttons.
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: DefaultTextStyle(
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                    style: descriptionStyle,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // This array contains the three line description on each card
+                        // demo.
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(productSelected.description),
+                        ),
+                        ListView.builder(
+                          scrollDirection: Axis.vertical,
+                          shrinkWrap: true,
+                          itemCount:
+                              supermarketsWithAvailabilityForProduct.length,
+                          itemBuilder: (context, index) {
+                            return ListTile(
+                              title: Text(supermarketsWithAvailabilityForProduct
+                                      .elementAt(index)
+                                      .name +
+                                  " - " +
+                                  supermarketsWithAvailabilityForProduct
+                                      .elementAt(index)
+                                      .address),
+                              subtitle: Text(
+                                supermarketsWithAvailabilityForProduct
+                                    .elementAt(index)
+                                    .availability
+                                    .replaceAll('_', ' '),
+                                style: TextStyle(fontStyle: FontStyle.italic),
+                              ),
+                            );
+                          },
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }
+          return Stack(children: [Center(child: CircularProgressIndicator())]);
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -299,7 +501,7 @@ class HomepageState extends State<Homepage> {
           backgroundColor: Colors.red[700],
           centerTitle: true,
         ),
-        body: mainWidget(_selectedIndex),
+        body: mainWidget(_selectedPage),
         bottomNavigationBar: BottomNavigationBar(
           showUnselectedLabels: true,
           items: _bottomBarOptions,
@@ -367,10 +569,7 @@ class FeedbackState extends StatelessWidget {
                           attribute: "feedback",
                           decoration:
                               InputDecoration(labelText: "Availability"),
-                          items: [
-                            'No availability',
-                            'Low availability'
-                          ]
+                          items: ['No availability', 'Low availability']
                               .map((availability) => DropdownMenuItem(
                                     value: availability,
                                     child: Text("$availability"),
@@ -383,7 +582,6 @@ class FeedbackState extends StatelessWidget {
                   child: new RaisedButton(
                     onPressed: () {
                       if (fbKey.currentState.saveAndValidate()) {
-                        //TODO Send feedback to backend
                         FeedbackApi.postFeedback(fbKey.currentState.value);
                         print(fbKey.currentState.value);
                       }
