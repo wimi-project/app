@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong/latlong.dart';
 
+import 'pages/feedback.dart';
 import 'pages/map.dart';
 import 'pages/products.dart';
 import 'pages/supermarkets.dart';
@@ -80,9 +82,10 @@ class HomepageState extends State<Homepage> {
   }
 
   Widget mainWidget(int index) {
-    switch(index){
+    switch (index) {
       case 0:
-        return getMapPage(mapController, _currentLocationInLatLng, _positionMarker);
+        return getMapPage(
+            context, mapController, _currentLocationInLatLng, _positionMarker);
       case 1:
         return getSupermarketsPage();
       case 2:
@@ -111,5 +114,14 @@ class HomepageState extends State<Homepage> {
         ),
       ),
     );
+  }
+}
+
+class FeedbackState extends StatelessWidget {
+  final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
+
+  @override
+  Widget build(BuildContext context) {
+    return getFeedbackPage(_fbKey);
   }
 }
