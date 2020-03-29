@@ -5,11 +5,11 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong/latlong.dart';
 import 'package:wimp/rest/feedbacksApi.dart';
-import 'package:wimp/rest/supermarketsApi.dart';
+import 'package:wimp/rest/storesApi.dart';
 
 import 'model/productModel.dart';
-import 'model/supermarketModel.dart';
-import 'model/supermarketsAndProductsModel.dart';
+import 'model/storeModel.dart';
+import 'model/storesAndProductsModel.dart';
 import 'rest/productsApi.dart';
 
 void main() => runApp(Wimp());
@@ -51,19 +51,19 @@ class HomepageState extends State<Homepage> {
   Future<List<ProductModel>> productsFetch;
   final productFilterController = TextEditingController();
   ProductModel productSelected;
-  Future<List<SupermarketModel>> supermarketsAvailabilityFetch;
-  List<SupermarketModel> supermarketsWithAvailabilityForProduct;
+  Future<List<StoreModel>> storesAvailabilityFetch;
+  List<StoreModel> storesWithAvailabilityForProduct;
 
-  List<SupermarketModel> _allSupermarkets;
-  List<SupermarketModel> _supermarketsShown;
-  Future<List<SupermarketModel>> supermarketsFetch;
-  final supermarketFilterController = TextEditingController();
-  SupermarketModel supermarketSelected;
+  List<StoreModel> _allStores;
+  List<StoreModel> _storesShown;
+  Future<List<StoreModel>> storesFetch;
+  final storeFilterController = TextEditingController();
+  StoreModel storeSelected;
 
   List<BottomNavigationBarItem> _bottomBarOptions = <BottomNavigationBarItem>[
     BottomNavigationBarItem(icon: Icon(Icons.place), title: Text('Map')),
     BottomNavigationBarItem(
-        icon: Icon(Icons.shopping_cart), title: Text('Supermarkets')),
+        icon: Icon(Icons.shopping_cart), title: Text('Stores')),
     BottomNavigationBarItem(icon: Icon(Icons.toc), title: Text('Products')),
   ];
 
@@ -77,8 +77,8 @@ class HomepageState extends State<Homepage> {
     productsFetch = ProductApi.getClosestProducts();
     productFilterController.addListener(onFilterProduct);
 
-    supermarketsFetch = SupermarketApi.getClosestSupermarkets();
-    supermarketFilterController.addListener(onFilterSupermarket);
+    storesFetch = StoreApi.getClosestStores();
+    storeFilterController.addListener(onFilterStore);
   }
 
   @override
@@ -86,7 +86,7 @@ class HomepageState extends State<Homepage> {
     // Clean up the controller when the widget is removed from the
     // widget tree.
     productFilterController.dispose();
-    supermarketFilterController.dispose();
+    storeFilterController.dispose();
     super.dispose();
   }
 
@@ -120,11 +120,11 @@ class HomepageState extends State<Homepage> {
       case 0:
         return getMapPage();
       case 1:
-        return getSupermarketsPage();
+        return getStoresPage();
       case 2:
         return getProductsPage();
       case 3:
-        return getSupermarketDetailPage();
+        return getStoreDetailPage();
       case 4:
         return getProductDetailPage();
     }
@@ -230,9 +230,8 @@ class HomepageState extends State<Homepage> {
     setState(() {
       productSelected = productModel;
       _selectedPage = 4;
-      supermarketsAvailabilityFetch =
-          SupermarketApi.getClosestSupermarketGivenProduct(
-              productSelected, _currentLocationInLatLng);
+      storesAvailabilityFetch = StoreApi.getClosestStoresGivenProduct(
+          productSelected, _currentLocationInLatLng);
     });
   }
 
@@ -253,34 +252,34 @@ class HomepageState extends State<Homepage> {
     return feedback;
   }
 
-  Widget getSupermarketsPage() {
+  Widget getStoresPage() {
     return MaterialApp(
-      home: FutureBuilder<List<SupermarketModel>>(
-          future: supermarketsFetch,
+      home: FutureBuilder<List<StoreModel>>(
+          future: storesFetch,
           builder: (context, snapshot) {
             if (snapshot.hasData) {
-              _allSupermarkets = snapshot.data;
-              if (_supermarketsShown == null) {
-                _supermarketsShown = _allSupermarkets;
+              _allStores = snapshot.data;
+              if (_storesShown == null) {
+                _storesShown = _allStores;
               }
               return FloatingSearchBar.builder(
-                itemCount: _supermarketsShown.length,
+                itemCount: _storesShown.length,
                 itemBuilder: (BuildContext context, int index) {
                   return ListTile(
                       leading: Container(
                           child: Icon(Icons.shopping_cart,
                               color: Colors.deepOrange)),
                       title: Text(
-                        _supermarketsShown.elementAt(index).name,
+                        _storesShown.elementAt(index).name,
                         style: TextStyle(
                             color: Colors.amber, fontWeight: FontWeight.bold),
                       ),
                       trailing: Icon(Icons.keyboard_arrow_right,
                           color: Colors.white, size: 30.0),
-                      onTap: () => onSupermarketTapped(
-                          _supermarketsShown.elementAt(index)));
+                      onTap: () =>
+                          onStoreTapped(_storesShown.elementAt(index)));
                 },
-                controller: supermarketFilterController,
+                controller: storeFilterController,
               );
             } else if (snapshot.hasError) {
               return Scaffold(body: Text("Can't fetch the data"));
@@ -291,34 +290,34 @@ class HomepageState extends State<Homepage> {
     );
   }
 
-  void onFilterSupermarket() {
-    if (supermarketFilterController.text.isNotEmpty) {
-      List<SupermarketModel> searchResultData = List<SupermarketModel>();
-      _allSupermarkets.forEach((supermarket) {
-        if (supermarket.name
+  void onFilterStore() {
+    if (storeFilterController.text.isNotEmpty) {
+      List<StoreModel> searchResultData = List<StoreModel>();
+      _allStores.forEach((store) {
+        if (store.name
             .toLowerCase()
-            .contains(supermarketFilterController.text.toLowerCase())) {
-          searchResultData.add(supermarket);
+            .contains(storeFilterController.text.toLowerCase())) {
+          searchResultData.add(store);
         }
       });
       setState(() {
-        _supermarketsShown = searchResultData;
+        _storesShown = searchResultData;
       });
     } else {
       setState(() {
-        _supermarketsShown = _allSupermarkets;
+        _storesShown = _allStores;
       });
     }
   }
 
-  void onSupermarketTapped(SupermarketModel supermarketModel) {
+  void onStoreTapped(StoreModel storeModel) {
     setState(() {
-      supermarketSelected = supermarketModel;
+      storeSelected = storeModel;
       _selectedPage = 3;
     });
   }
 
-  Widget getSupermarketDetailPage() {
+  Widget getStoreDetailPage() {
     final ThemeData theme = Theme.of(context);
     final TextStyle titleStyle = theme.textTheme.headline
         .copyWith(color: Colors.black87, fontWeight: FontWeight.bold);
@@ -350,7 +349,7 @@ class HomepageState extends State<Homepage> {
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    supermarketSelected.name,
+                    storeSelected.name,
                     style: titleStyle,
                   ),
                 ),
@@ -372,11 +371,11 @@ class HomepageState extends State<Homepage> {
                 // demo.
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(supermarketSelected.address),
+                  child: Text(storeSelected.address),
                 ),
                 Text(
                   "QUEUE TIME: " +
-                      getFeedback(supermarketSelected.queueTime.toString()),
+                      getFeedback(storeSelected.queueTime.toString()),
                   style: descriptionStyle.copyWith(
                       color: Colors.black54, fontStyle: FontStyle.italic),
                 ),
@@ -384,7 +383,7 @@ class HomepageState extends State<Homepage> {
                   itemCount: ,
                   itemBuilder: (context, index) {
                     return ListTile(
-                      title: Text(supermarketSelected),
+                      title: Text(storeSelected),
                     );
                   },
                 )*/
@@ -402,11 +401,11 @@ class HomepageState extends State<Homepage> {
         .copyWith(color: Colors.black87, fontWeight: FontWeight.bold);
     final TextStyle descriptionStyle = theme.textTheme.subtitle;
 
-    return FutureBuilder<List<SupermarketModel>>(
-        future: supermarketsAvailabilityFetch,
+    return FutureBuilder<List<StoreModel>>(
+        future: storesAvailabilityFetch,
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            supermarketsWithAvailabilityForProduct = snapshot.data;
+            storesWithAvailabilityForProduct = snapshot.data;
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -461,19 +460,18 @@ class HomepageState extends State<Homepage> {
                         ListView.builder(
                           scrollDirection: Axis.vertical,
                           shrinkWrap: true,
-                          itemCount:
-                              supermarketsWithAvailabilityForProduct.length,
+                          itemCount: storesWithAvailabilityForProduct.length,
                           itemBuilder: (context, index) {
                             return ListTile(
-                              title: Text(supermarketsWithAvailabilityForProduct
+                              title: Text(storesWithAvailabilityForProduct
                                       .elementAt(index)
                                       .name +
                                   " - " +
-                                  supermarketsWithAvailabilityForProduct
+                                  storesWithAvailabilityForProduct
                                       .elementAt(index)
                                       .address),
                               subtitle: Text(
-                                supermarketsWithAvailabilityForProduct
+                                storesWithAvailabilityForProduct
                                     .elementAt(index)
                                     .availability
                                     .replaceAll('_', ' '),
@@ -526,12 +524,11 @@ class FeedbackState extends State<FeedbackPage> {
   int _currentPage = 0;
   final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
   final productsFetch = ProductApi.getClosestProducts();
-  final supermarketsFetch = SupermarketApi.getClosestSupermarkets();
+  final storesFetch = StoreApi.getClosestStores();
   List<ProductModel> _products;
-  List<SupermarketModel> _supermarkets;
+  List<StoreModel> _stores;
 
   Future<bool> _futurePostResult;
-  bool _postResult;
 
   Widget getMainWidget(int index) {
     switch (index) {
@@ -550,10 +547,10 @@ class FeedbackState extends State<FeedbackPage> {
             ))
         .toList();
 
-    List<DropdownMenuItem> supermarketItems = _supermarkets
-        .map((supermarket) => DropdownMenuItem(
-              value: supermarket.id,
-              child: Text(supermarket.name),
+    List<DropdownMenuItem> storeItems = _stores
+        .map((store) => DropdownMenuItem(
+              value: store.id,
+              child: Text(store.name),
             ))
         .toList();
 
@@ -563,9 +560,9 @@ class FeedbackState extends State<FeedbackPage> {
         child: Column(
           children: <Widget>[
             FormBuilderDropdown(
-                attribute: "supermarket",
-                decoration: InputDecoration(labelText: "Supermarket"),
-                items: supermarketItems),
+                attribute: "store",
+                decoration: InputDecoration(labelText: "Store"),
+                items: storeItems),
             FormBuilderDropdown(
                 attribute: "product",
                 decoration: InputDecoration(labelText: "Product"),
@@ -617,7 +614,6 @@ class FeedbackState extends State<FeedbackPage> {
           future: _futurePostResult,
           builder: (context, snapshot) {
             if (snapshot.hasData && snapshot.data) {
-              _postResult = snapshot.data;
               return SafeArea(
                 child: Scaffold(
                   body: Center(
@@ -640,13 +636,12 @@ class FeedbackState extends State<FeedbackPage> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: Future.wait([supermarketsFetch, productsFetch]).then((response) =>
-          new SupermarketsAndProducts(
-              supermarkets: response[0], products: response[1])),
+      future: Future.wait([storesFetch, productsFetch]).then((response) =>
+          new StoresAndProducts(stores: response[0], products: response[1])),
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         if (snapshot.hasData) {
           _products = snapshot.data.products;
-          _supermarkets = snapshot.data.supermarkets;
+          _stores = snapshot.data.stores;
 
           return Scaffold(
               appBar: AppBar(
@@ -668,8 +663,8 @@ class FeedbackState extends State<FeedbackPage> {
                   child: Column(
                     children: <Widget>[
                       FormBuilderTextField(
-                        attribute: "supermarket",
-                        decoration: InputDecoration(labelText: "Supermarket"),
+                        attribute: "store",
+                        decoration: InputDecoration(labelText: "Store"),
                       ),
                       FormBuilderTextField(
                         attribute: "product",

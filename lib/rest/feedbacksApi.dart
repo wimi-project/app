@@ -5,13 +5,13 @@ import 'package:wimp/model/feedbackModel.dart';
 
 class FeedbackApi {
   static Future<bool> postFeedback(Map<String, dynamic> map) async {
-    int supermarketId;
+    int storeId;
     int productId;
     String feedback;
     map.forEach((k, v) {
       switch (k) {
-        case "supermarket":
-          supermarketId = v;
+        case "store":
+          storeId = v;
           break;
         case "product":
           productId = v;
@@ -24,7 +24,7 @@ class FeedbackApi {
       }
     });
 
-    if (supermarketId == null || productId == null || feedback == null) {
+    if (storeId == null || productId == null || feedback == null) {
       return false;
     }
 
@@ -34,7 +34,7 @@ class FeedbackApi {
     String postUrl =
         "http://15.236.118.131:5000/feedback/";
     postUrl += "1/";
-    postUrl += productId.toString() + "/" + supermarketId.toString();
+    postUrl += productId.toString() + "/" + storeId.toString();
 
     Map headers = new Map<String, String>();
     headers['Content-Type'] = 'application/json';

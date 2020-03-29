@@ -1,6 +1,4 @@
-import 'dart:ffi';
-
-class SupermarketModel {
+class StoreModel {
   int id;
   String name;
   String address;
@@ -9,7 +7,7 @@ class SupermarketModel {
   int queueTime;
   String availability;
 
-  SupermarketModel(
+  StoreModel(
       {this.id,
       this.name,
       this.address,
@@ -18,8 +16,8 @@ class SupermarketModel {
       this.queueTime,
       this.availability});
 
-  factory SupermarketModel.fromJson(Map<String, dynamic> json) {
-    return SupermarketModel(
+  factory StoreModel.fromJson(Map<String, dynamic> json) {
+    return StoreModel(
         id: json['commercial_activity_id'],
         name: json['name'],
         address: json['address'],

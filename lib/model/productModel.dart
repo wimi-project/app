@@ -3,7 +3,7 @@ class ProductModel {
   String name;
   String description;
   String imgUrl;
-  int supermarketId;
+  int storeId;
   String feedback;
 
   ProductModel({
@@ -11,7 +11,7 @@ class ProductModel {
     this.name,
     this.description,
     this.imgUrl,
-    this.supermarketId,
+    this.storeId,
     this.feedback
   });
 
@@ -21,7 +21,7 @@ class ProductModel {
         name: json['product_name'],
         description: json['product_description'],
         imgUrl: json['product_image_url'],
-        supermarketId: json['supermarket_id'],
+        storeId: json['commercial_activity_id'],
         feedback: json['availability']
     );
   }
