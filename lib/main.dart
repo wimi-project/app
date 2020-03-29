@@ -4,6 +4,7 @@ import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong/latlong.dart';
+import 'package:wimp/rest/feedbacksApi.dart';
 import 'package:wimp/rest/supermarketsApi.dart';
 
 import 'model/productModel.dart';
@@ -315,6 +316,153 @@ class HomepageState extends State<Homepage> {
 
 class FeedbackState extends StatelessWidget {
   final GlobalKey<FormBuilderState> _fbKey = GlobalKey<FormBuilderState>();
+  final productsFetch = ProductApi.getClosestProducts();
+  final supermarketsFetch = SupermarketApi.getClosestSupermarkets();
+  List<ProductModel> _products;
+  List<SupermarketModel> _supermarkets;
+
+  Widget getFeedbackPage(GlobalKey<FormBuilderState> fbKey) {
+    return FutureBuilder(
+      future: Future.wait([supermarketsFetch, productsFetch]).then((response) =>
+          new SupermarketsAndProducts(
+              supermarkets: response[0], products: response[1])),
+      builder: (BuildContext context, AsyncSnapshot snapshot) {
+        if (snapshot.hasData) {
+          _products = snapshot.data.products;
+          _supermarkets = snapshot.data.supermarkets;
+          List<DropdownMenuItem> productItems = _products
+              .map((product) => DropdownMenuItem(
+                    value: product.id,
+                    child: Text(product.name),
+                  ))
+              .toList();
+
+          List<DropdownMenuItem> supermarketItems = _supermarkets
+              .map((supermarket) => DropdownMenuItem(
+                    value: supermarket.id,
+                    child: Text(supermarket.name),
+                  ))
+              .toList();
+
+          return Scaffold(
+              appBar: AppBar(
+                title: Text('Wimp'),
+                backgroundColor: Colors.red[700],
+                centerTitle: true,
+              ),
+              body: Column(children: <Widget>[
+                FormBuilder(
+                  key: fbKey,
+                  child: Column(
+                    children: <Widget>[
+                      FormBuilderDropdown(
+                          attribute: "supermarket",
+                          decoration: InputDecoration(labelText: "Supermarket"),
+                          items: supermarketItems),
+                      FormBuilderDropdown(
+                          attribute: "product",
+                          decoration: InputDecoration(labelText: "Product"),
+                          items: productItems),
+                      FormBuilderDropdown(
+                          attribute: "feedback",
+                          decoration:
+                              InputDecoration(labelText: "Availability"),
+                          items: [
+                            'No availability',
+                            'Low availability'
+                          ]
+                              .map((availability) => DropdownMenuItem(
+                                    value: availability,
+                                    child: Text("$availability"),
+                                  ))
+                              .toList()),
+                    ],
+                  ),
+                ),
+                Center(
+                  child: new RaisedButton(
+                    onPressed: () {
+                      if (fbKey.currentState.saveAndValidate()) {
+                        //TODO Send feedback to backend
+                        FeedbackApi.postFeedback(fbKey.currentState.value);
+                        print(fbKey.currentState.value);
+                      }
+                    },
+                    textColor: Colors.white,
+                    color: Colors.red,
+                    padding: const EdgeInsets.all(8.0),
+                    child: new Text(
+                      "Submit",
+                    ),
+                  ),
+                )
+              ]));
+        } else if (snapshot.hasError) {
+          return Scaffold(
+              appBar: AppBar(
+                title: Text('Wimp'),
+                backgroundColor: Colors.red[700],
+                centerTitle: true,
+              ),
+              body: Column(children: <Widget>[
+                FormBuilder(
+                  key: fbKey,
+                  child: Column(
+                    children: <Widget>[
+                      FormBuilderTextField(
+                        attribute: "supermarket",
+                        decoration: InputDecoration(labelText: "Supermarket"),
+                      ),
+                      FormBuilderTextField(
+                        attribute: "product",
+                        decoration: InputDecoration(labelText: "Product"),
+                      ),
+                      FormBuilderDropdown(
+                          attribute: "feedback",
+                          decoration:
+                              InputDecoration(labelText: "Availability"),
+                          items: [
+                            'No availability',
+                            'Low availability',
+                            'High availability'
+                          ]
+                              .map((availability) => DropdownMenuItem(
+                                    value: availability,
+                                    child: Text("$availability"),
+                                  ))
+                              .toList()),
+                    ],
+                  ),
+                ),
+                Center(
+                  child: new RaisedButton(
+                    onPressed: () {
+                      if (fbKey.currentState.saveAndValidate()) {
+                        //TODO Send feedback to backend
+                        print(fbKey.currentState.value);
+                      }
+                    },
+                    textColor: Colors.white,
+                    color: Colors.red,
+                    padding: const EdgeInsets.all(8.0),
+                    child: new Text(
+                      "Submit",
+                    ),
+                  ),
+                )
+              ]));
+        }
+        return Scaffold(
+            appBar: AppBar(
+              title: Text('Wimp'),
+              backgroundColor: Colors.red[700],
+              centerTitle: true,
+            ),
+            body:
+                Stack(children: [Center(child: CircularProgressIndicator())]));
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

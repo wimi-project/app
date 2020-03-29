@@ -8,7 +8,8 @@ import 'package:http/http.dart' as http;
 class ProductApi {
 
   static Future<List<ProductModel>> getClosestProducts() async {
-    final response =  await http.get('http://ec2-52-47-192-233.eu-west-3.compute.amazonaws.com:5000/products');
+    final response =  await http.get('http://15.236.118.131:5000/products');
+    //final response =  await http.get('https://my-json-server.typicode.com/pauln19/demo/products');
 
     if (response.statusCode == 200) {
       // If the call to the server was successful, parse the JSON.
