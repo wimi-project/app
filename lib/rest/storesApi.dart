@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:latlong/latlong.dart';
-import 'package:wimp/model/productModel.dart';
-import 'package:wimp/model/storeModel.dart';
+import 'package:wimi/model/productModel.dart';
+import 'package:wimi/model/storeModel.dart';
 
 class StoreApi {
   static Future<List<StoreModel>> getClosestStores() async {

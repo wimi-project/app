@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:wimp/model/feedbackModel.dart';
+import 'package:wimi/model/feedbackModel.dart';
 
 class FeedbackApi {
   static Future<bool> postFeedback(Map<String, dynamic> map) async {

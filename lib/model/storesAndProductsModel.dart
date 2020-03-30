@@ -1,5 +1,5 @@
-import 'package:wimp/model/productModel.dart';
-import 'package:wimp/model/storeModel.dart';
+import 'package:wimi/model/productModel.dart';
+import 'package:wimi/model/storeModel.dart';
 
 class StoresAndProducts {
   final List<StoreModel> stores;

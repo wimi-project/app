@@ -4,17 +4,17 @@ import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong/latlong.dart';
-import 'package:wimp/rest/feedbacksApi.dart';
-import 'package:wimp/rest/storesApi.dart';
+import 'package:wimi/rest/feedbacksApi.dart';
+import 'package:wimi/rest/storesApi.dart';
 
 import 'model/productModel.dart';
 import 'model/storeModel.dart';
 import 'model/storesAndProductsModel.dart';
 import 'rest/productsApi.dart';
 
-void main() => runApp(Wimp());
+void main() => runApp(Wimi());
 
-class Wimp extends StatelessWidget {
+class Wimi extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -496,7 +496,7 @@ class HomepageState extends State<Homepage> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: Text('Wimp'),
+          title: Text('Wimi'),
           backgroundColor: Colors.red[700],
           centerTitle: true,
         ),
@@ -601,7 +601,7 @@ class FeedbackState extends State<FeedbackPage> {
   Widget getLoadingPage() {
     return Scaffold(
         appBar: AppBar(
-          title: Text('Wimp'),
+          title: Text('Wimi'),
           backgroundColor: Colors.red[700],
           centerTitle: true,
         ),
@@ -645,7 +645,7 @@ class FeedbackState extends State<FeedbackPage> {
 
           return Scaffold(
               appBar: AppBar(
-                title: Text('Wimp'),
+                title: Text('Wimi'),
                 backgroundColor: Colors.red[700],
                 centerTitle: true,
               ),
@@ -653,7 +653,7 @@ class FeedbackState extends State<FeedbackPage> {
         } else if (snapshot.hasError) {
           return Scaffold(
               appBar: AppBar(
-                title: Text('Wimp'),
+                title: Text('Wimi'),
                 backgroundColor: Colors.red[700],
                 centerTitle: true,
               ),
